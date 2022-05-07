@@ -20,11 +20,17 @@ def get_primes(n, max=None):
                 marker[j] = 1
     return primes
 
-def rotl(x, d):
-    return (x << d) | (x >> (32 - d))
- 
 def rotr(x, d):
-    return (x >> d) | (x << (32 - d)) 
+    if isinstance(x, int):
+        x = binary(x, 32)
+    d = abs(d) % len(x)
+    return int(x[-d:] + x[:-d], base=2)
+
+def rotl(x, d):
+    if isinstance(x, int):
+        x = binary(x, 32)
+    d = abs(d) % len(x)
+    return int(x[d:] + x[:d], base=2)
 
 def transform(x, mode=0):
     assert mode in (0, 1), "Invalid mode"
@@ -56,5 +62,5 @@ def encode(data):
         words = [block[i:i+32] for i in range(0, 512, 32)]
         print("\n".join(words))
 
-encode("portsmouth")
-print(bin(rotr(int("01110011011011010110111101110101", base=2), 7)))
+#encode("portsmouth")
+print(rotl(rotr(8742748304, 7), 7))
