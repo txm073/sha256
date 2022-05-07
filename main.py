@@ -67,28 +67,30 @@ def pad(data):
         bin_str += "0"
     return bin_str[:-8] + binary(length % (2 ** 8), 8)
 
+def compress(block, iv):
+    a, b, c, d, e, f, g, h = iv
+    words = [int(block[i:i+32], base=2) for i in range(0, 512, 32)]
+    for i in range(16, 64):
+        words.append(next_word(words, i))
+    for round_idx in range(64):
+        t1 = add(h, sigma2(e), ch(e, f, g), keys[round_idx], words[round_idx])
+        t2 = add(sigma1(a), maj(a, b, c))
+        h, g, f = g, f, e
+        e = add(d, t1)
+        d, c, b = c, b, a
+        a = add(t1, t2)
+    return [add(i, j) for i, j in zip((a, b, c, d, e, f, g, h), iv)]
+
 def sha256(data):
-    a, b, c, d, e, f, g, h = init_values
+    states = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
     bin_str = pad(data)
     for block in get_blocks(bin_str):
-        words = [int(block[i:i+32], base=2) for i in range(0, 512, 32)]
-        for i in range(16, 64):
-            words.append(next_word(words, i))
-        for round_idx in range(64):
-            t1 = add(h, sigma2(e), ch(e, f, g), keys[round_idx], words[round_idx])
-            t2 = add(sigma1(a), maj(a, b, c))
-            h, g, f = g, f, e
-            e = add(d, t1)
-            d, c, b = c, b, a
-            a = add(t1, t2)
-        output = ""
-        for i, j in zip((a, b, c, d, e, f, g, h), init_values):
-            output += hex(add(i, j), 32)
-        return output
+        states = compress(block, states)
+    return "".join([hex(state, 32) for state in states])
 
 if __name__ == "__main__":
     import hashlib
 
-    msg = "Hello World!"
+    msg = "Hello World!"#open(__file__).read()
     print(hashlib.sha256(msg.encode()).hexdigest())
     print(sha256(msg))
